@@ -96,6 +96,8 @@ type PoStProofPolicy struct {
 // Partition sizes must match those used by the proofs library.
 // See https://github.com/filecoin-project/rust-fil-proofs/blob/master/filecoin-proofs/src/constants.rs#L85
 var PoStProofPolicies = map[stabi.RegisteredPoStProof]*PoStProofPolicy{
+
+	/// XXX no good???
 	stabi.RegisteredPoStProof_StackedDrgWindow2KiBV1: {
 		WindowPoStPartitionSectors: 2,
 		ConsensusMinerMinPower:     stabi.NewStoragePower(10 << 40),
