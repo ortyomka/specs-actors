@@ -1508,10 +1508,10 @@ func (t *SectorPreCommitInfo) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	// t.SealedCID (cid.Cid) (struct)
+	// t.SealedSectorCID (cid.Cid) (struct)
 
 	if err := cbg.WriteCidBuf(scratch, w, t.SealedCID); err != nil {
-		return xerrors.Errorf("failed to write cid field t.SealedCID: %w", err)
+		return xerrors.Errorf("failed to write cid field t.SealedSectorCID: %w", err)
 	}
 
 	// t.SealRandEpoch (abi.ChainEpoch) (int64)
@@ -1633,13 +1633,13 @@ func (t *SectorPreCommitInfo) UnmarshalCBOR(r io.Reader) error {
 		t.SectorNumber = abi.SectorNumber(extra)
 
 	}
-	// t.SealedCID (cid.Cid) (struct)
+	// t.SealedSectorCID (cid.Cid) (struct)
 
 	{
 
 		c, err := cbg.ReadCid(br)
 		if err != nil {
-			return xerrors.Errorf("failed to read cid field t.SealedCID: %w", err)
+			return xerrors.Errorf("failed to read cid field t.SealedSectorCID: %w", err)
 		}
 
 		t.SealedCID = c
@@ -1820,10 +1820,10 @@ func (t *SectorOnChainInfo) MarshalCBOR(w io.Writer) error {
 		}
 	}
 
-	// t.SealedCID (cid.Cid) (struct)
+	// t.SealedSectorCID (cid.Cid) (struct)
 
-	if err := cbg.WriteCidBuf(scratch, w, t.SealedCID); err != nil {
-		return xerrors.Errorf("failed to write cid field t.SealedCID: %w", err)
+	if err := cbg.WriteCidBuf(scratch, w, t.SealedSectorCID); err != nil {
+		return xerrors.Errorf("failed to write cid field t.SealedSectorCID: %w", err)
 	}
 
 	// t.DealIDs ([]abi.DealID) (slice)
@@ -1962,16 +1962,16 @@ func (t *SectorOnChainInfo) UnmarshalCBOR(r io.Reader) error {
 
 		t.SealProof = abi.RegisteredSealProof(extraI)
 	}
-	// t.SealedCID (cid.Cid) (struct)
+	// t.SealedSectorCID (cid.Cid) (struct)
 
 	{
 
 		c, err := cbg.ReadCid(br)
 		if err != nil {
-			return xerrors.Errorf("failed to read cid field t.SealedCID: %w", err)
+			return xerrors.Errorf("failed to read cid field t.SealedSectorCID: %w", err)
 		}
 
-		t.SealedCID = c
+		t.SealedSectorCID = c
 
 	}
 	// t.DealIDs ([]abi.DealID) (slice)

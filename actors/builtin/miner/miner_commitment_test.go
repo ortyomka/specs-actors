@@ -694,7 +694,7 @@ func TestProveCommit(t *testing.T) {
 		sector := actor.proveCommitSectorAndConfirm(rt, precommit, makeProveCommit(sectorNo), proveCommitConf{})
 
 		assert.Equal(t, precommit.Info.SealProof, sector.SealProof)
-		assert.Equal(t, precommit.Info.SealedCID, sector.SealedCID)
+		assert.Equal(t, precommit.Info.SealedCID, sector.SealedSectorCID)
 		assert.Equal(t, precommit.Info.DealIDs, sector.DealIDs)
 		assert.Equal(t, rt.Epoch(), sector.Activation)
 		assert.Equal(t, precommit.Info.Expiration, sector.Expiration)

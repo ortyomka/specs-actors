@@ -650,7 +650,7 @@ func testSector(expiration, number, weight, vweight, pledge int64) *miner.Sector
 		DealWeight:         big.NewInt(weight),
 		VerifiedDealWeight: big.NewInt(vweight),
 		InitialPledge:      abi.NewTokenAmount(pledge),
-		SealedCID:          tutil.MakeCID(fmt.Sprintf("commR-%d", number), &miner.SealedCIDPrefix),
+		SealedSectorCID:    tutil.MakeCID(fmt.Sprintf("commR-%d", number), &miner.SealedCIDPrefix),
 	}
 }
 

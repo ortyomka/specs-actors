@@ -4386,7 +4386,7 @@ func (h *actorHarness) disputeWindowPoSt(rt *mock.Runtime, deadline *dline.Info,
 		proofInfos[i] = proof.SectorInfo{
 			SealProof:    si.SealProof,
 			SectorNumber: si.SectorNumber,
-			SealedCID:    si.SealedCID,
+			SealedCID:    si.SealedSectorCID,
 		}
 	}
 
@@ -4526,7 +4526,7 @@ func (h *actorHarness) submitWindowPoStRaw(rt *mock.Runtime, deadline *dline.Inf
 			proofInfos[i] = proof.SectorInfo{
 				SealProof:    si.SealProof,
 				SectorNumber: si.SectorNumber,
-				SealedCID:    si.SealedCID,
+				SealedCID:    si.SealedSectorCID,
 			}
 		}
 

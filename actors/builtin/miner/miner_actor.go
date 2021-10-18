@@ -641,7 +641,7 @@ func (a Actor) DisputeWindowedPoSt(rt Runtime, params *DisputeWindowedPoStParams
 //type SectorPreCommitInfo struct {
 //	SealProof       abi.RegisteredSealProof
 //	SectorNumber    abi.SectorNumber
-//	SealedCID       cid.Cid `checked:"true"` // CommR
+//	SealedSectorCID       cid.Cid `checked:"true"` // CommR
 //	SealRandEpoch   abi.ChainEpoch
 //	DealIDs         []abi.DealID
 //	Expiration      abi.ChainEpoch
@@ -1157,7 +1157,7 @@ func confirmSectorProofsValid(rt Runtime, preCommits []*SectorPreCommitOnChainIn
 			newSectorInfo := SectorOnChainInfo{
 				SectorNumber:          precommit.Info.SectorNumber,
 				SealProof:             precommit.Info.SealProof,
-				SealedCID:             precommit.Info.SealedCID,
+				SealedSectorCID:       precommit.Info.SealedCID,
 				DealIDs:               precommit.Info.DealIDs,
 				Expiration:            precommit.Info.Expiration,
 				Activation:            activation,
@@ -2451,7 +2451,7 @@ func verifyWindowedPost(rt Runtime, challengeEpoch abi.ChainEpoch, sectors []*Se
 		sectorProofInfo[i] = proof.SectorInfo{
 			SealProof:    s.SealProof,
 			SectorNumber: s.SectorNumber,
-			SealedCID:    s.SealedCID,
+			SealedCID:    s.SealedSectorCID,
 		}
 	}
 

@@ -1021,7 +1021,7 @@ func newSectorOnChainInfo(sectorNo abi.SectorNumber, sealed cid.Cid, weight big.
 	return &miner.SectorOnChainInfo{
 		SectorNumber:          sectorNo,
 		SealProof:             abi.RegisteredSealProof_StackedDrg32GiBV1_1,
-		SealedCID:             sealed,
+		SealedSectorCID:       sealed,
 		DealIDs:               nil,
 		Activation:            activation,
 		Expiration:            abi.ChainEpoch(1),

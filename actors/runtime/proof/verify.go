@@ -19,7 +19,7 @@ import (
 //	Proof                 []byte
 //
 //	// Safe because we get those from the miner actor
-//	SealedCID   cid.Cid `checked:"true"` // CommR
+//	SealedSectorCID   cid.Cid `checked:"true"` // CommR
 //	UnsealedCID cid.Cid `checked:"true"` // CommD
 //}
 type SealVerifyInfo = proof0.SealVerifyInfo
@@ -36,7 +36,7 @@ type AggregateSealVerifyProofAndInfos = proof5.AggregateSealVerifyProofAndInfos
 //type SectorInfo struct {
 //	SealProof    abi.RegisteredSealProof // RegisteredProof used when sealing - needs to be mapped to PoSt registered proof when used to verify a PoSt
 //	SectorNumber abi.SectorNumber
-//	SealedCID    cid.Cid // CommR
+//	SealedSectorCID    cid.Cid // CommR
 //}
 type SectorInfo = proof0.SectorInfo
 

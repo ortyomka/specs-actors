@@ -142,7 +142,7 @@ type SectorPreCommitInfo struct {
 	DealIDs         []abi.DealID
 	Expiration      abi.ChainEpoch
 	ReplaceCapacity bool // Whether to replace a "committed capacity" no-deal sector (requires non-empty DealIDs)
-	// The committed capacity sector to replace, and it's deadline/partition location
+	// The committed capacity sector to replace, and its deadline/partition location
 	ReplaceSectorDeadline  uint64
 	ReplaceSectorPartition uint64
 	ReplaceSectorNumber    abi.SectorNumber
@@ -161,7 +161,7 @@ type SectorPreCommitOnChainInfo struct {
 type SectorOnChainInfo struct {
 	SectorNumber          abi.SectorNumber
 	SealProof             abi.RegisteredSealProof // The seal proof type implies the PoSt proof/s
-	SealedCID             cid.Cid                 // CommR
+	SealedSectorCID       cid.Cid                 // CommR
 	DealIDs               []abi.DealID
 	Activation            abi.ChainEpoch  // Epoch during which the sector proof was accepted
 	Expiration            abi.ChainEpoch  // Epoch during which the sector expires
