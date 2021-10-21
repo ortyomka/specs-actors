@@ -82,6 +82,8 @@ func MigrateStateTree(ctx context.Context, store cbor.IpldStore, actorsRootIn ci
 	// Set of prior version code CIDs for actors to defer during iteration, for explicit migration afterwards.
 	var deferredCodeIDs = map[cid.Cid]struct{}{
 		// None
+
+		// XXX do the power actor last, after miner actor migration
 	}
 
 	if len(migrations)+len(deferredCodeIDs) != 11 {
@@ -270,6 +272,10 @@ func (job *migrationJob) run(ctx context.Context, store cbor.IpldStore, priorEpo
 	}
 
 	// Set up new actor record with the migrated state.
+	//XXX: now how do i transfer any funds from miner to owner?
+	// XXX: maybe add a TransferFrom field to this type to pass around transfers btwn actors
+	// XXX: pair of transfer address and transfer amount
+	// XXX: https://github.com/filecoin-project/specs-actors/blob/0fa32a654d910960306a0567d69f8d2ac1e66c67/actors/migration/nv4/top.go#L228
 	return &migrationJobResult{
 		job.Address, // Unchanged
 		states6.Actor{

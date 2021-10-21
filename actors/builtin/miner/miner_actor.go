@@ -1135,7 +1135,6 @@ func confirmSectorProofsValid(rt Runtime, preCommits []*SectorPreCommitOnChainIn
 	totalPledge := big.Zero()
 	depositToUnlock := big.Zero()
 	newSectors := make([]*SectorOnChainInfo, 0)
-	newlyVested := big.Zero()
 	var st State
 	store := adt.AsStore(rt)
 	rt.StateTransaction(&st, func() {
@@ -1218,7 +1217,7 @@ func confirmSectorProofsValid(rt Runtime, preCommits []*SectorPreCommitOnChainIn
 	})
 
 	// Request pledge update for activated sector.
-	notifyPledgeChanged(rt, big.Sub(totalPledge, newlyVested))
+	notifyPledgeChanged(rt, totalPledge)
 }
 
 //type CheckSectorProvenParams struct {

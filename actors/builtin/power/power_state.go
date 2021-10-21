@@ -36,12 +36,15 @@ const CronQueueAmtBitwidth = 6
 const ProofValidationBatchAmtBitwidth = 4
 
 type State struct {
+	// every single sector that's been pre/prove committed by every miner above MinPowerThreshold
 	TotalRawBytePower abi.StoragePower
 	// TotalBytesCommitted includes claims from miners below min power threshold
-	TotalBytesCommitted  abi.StoragePower
+	TotalBytesCommitted abi.StoragePower
+	// total power, but weighted by whether the data is verified
 	TotalQualityAdjPower abi.StoragePower
 	// TotalQABytesCommitted includes claims from miners below min power threshold
 	TotalQABytesCommitted abi.StoragePower
+	// subset of what the miners have locked, doesn't include precommit deposit
 	TotalPledgeCollateral abi.TokenAmount
 
 	// These fields are set once per epoch in the previous cron tick and used
@@ -60,9 +63,10 @@ type State struct {
 
 	// First epoch in which a cron task may be stored.
 	// Cron will iterate every epoch between this and the current epoch inclusively to find tasks to execute.
+	// this should go away soon
 	FirstCronEpoch abi.ChainEpoch
 
-	// Claimed power for each miner.
+	// Claimed power for each miner. (this comes from proved sectors)
 	Claims cid.Cid // Map, HAMT[address]Claim
 
 	ProofValidationBatch *cid.Cid // Multimap, (HAMT[Address]AMT[SealVerifyInfo])

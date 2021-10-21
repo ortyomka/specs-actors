@@ -1,11 +1,11 @@
 package nv14
 
 import (
-	"container/list"
 	"context"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/big"
 	power5 "github.com/filecoin-project/specs-actors/v5/actors/builtin/power"
 	"github.com/filecoin-project/specs-actors/v6/actors/builtin"
 	"github.com/filecoin-project/specs-actors/v6/actors/builtin/power"
@@ -13,6 +13,7 @@ import (
 	"github.com/filecoin-project/specs-actors/v6/actors/util/smoothing"
 	cid "github.com/ipfs/go-cid"
 	cbor "github.com/ipfs/go-ipld-cbor"
+	"golang.org/x/xerrors"
 )
 
 type powerMigrator struct{}
@@ -53,12 +54,30 @@ func (m powerMigrator) migrateState(ctx context.Context, store cbor.IpldStore, i
 		return nil, err
 	}
 
-	claimAddressesToRemove := list.New()
 	var claim power.Claim
 	err = claims.ForEach(&claim, func(key string) error {
 		if isTestPostProofType(claim.WindowPoStProofType) {
-			claimAddressesToRemove.PushBack(claim)
-			// XXX: now how do i transfer any funds from miner to owner?
+			addr, err := address.NewFromString(key)
+			if err != nil {
+				return err
+			}
+			if claim.RawBytePower.GreaterThan(big.Zero()) {
+				return xerrors.Errorf("nonzero RawBytePower on claim from miner with test proof size. This is not good.")
+			}
+			if claim.QualityAdjPower.GreaterThan(big.Zero()) {
+				return xerrors.Errorf("nonzero QualityAdjPower on claim from miner with test proof size. This is not good.")
+			}
+			if builtin.ConsensusMinerMinPower(claim.WindowPoStProofType).LessThanEqual(big.Zero()) {
+			
+			outState.DeleteClaim(claims, addr)
+			outState.MinerCount--
+
+			// XXX: assert that they have not committed anything, no power, no locked funds at all
+			// XXX: because that would be a biiiiig problem
+
+			// XXX: are you SURE that these weird miner types will be in claims? make sure
+			// should not need to worry about mineraboveminpowercount, but make sure!
+			// make SURE they were only added to minercount and not mineraboveminpowercount
 		}
 		return nil
 	})
@@ -67,17 +86,18 @@ func (m powerMigrator) migrateState(ctx context.Context, store cbor.IpldStore, i
 		return nil, err
 	}
 
-	// outState gets mutated in here- remove all the claimAddresses with deleteClaim
-	for cAddr := claimAddressesToRemove.Front(); cAddr != nil; cAddr = cAddr.Next() {
-		outState.DeleteClaim(claims, address.Address(cAddr.Value))
-		outState.MinerCount--
-	}
-
 	newHead, err := store.Put(ctx, &outState)
 	return &actorMigrationResult{
 		newCodeCID: m.migratedCodeCID(),
 		newHead:    newHead,
 	}, err
+
+	// XXX: what happens if someone sends these addresses some funds??? no good.
+
+	// to test: add one of each type of miner, maybe add some sectors, make a complex enough state and check some invariants???
+	// give some some fees, give some no fees, etc, etc, etc
+
+	// XXX: should I loop through and check that the minpowercount and the minercount are correct after this?
 }
 
 func isTestPostProofType(proofType abi.RegisteredPoStProof) bool {
