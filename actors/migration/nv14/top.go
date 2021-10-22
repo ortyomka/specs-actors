@@ -1,11 +1,14 @@
 package nv14
 
 import (
+	"container/list"
 	"context"
 	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/filecoin-project/go-state-types/big"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -202,22 +205,69 @@ func MigrateStateTree(ctx context.Context, store cbor.IpldStore, actorsRootIn ci
 		return nil
 	})
 
+	// building up a list of balance transfers.
+	// this mutex will only get held like 30 times over a list of all actors, so it will have zero contention, but better safe than sorry!
+	var balanceTransferListGuard = &sync.Mutex{}
+	var balanceTransferList = list.New()
 	// Insert migrated records in output state tree and accumulators.
 	grp.Go(func() error {
 		log.Log(rt.INFO, "Result writer started")
 		resultCount := 0
+		deletedActorCount := 0
 		for result := range jobResultCh {
-			if err := actorsOut.SetActor(result.Address, &result.Actor); err != nil {
-				return err
+			if result.minerTypeMigrationShouldDelete {
+				balanceTransferListGuard.Lock()
+				balanceTransferList.PushBack(result.minerTypeMigrationBalanceTransferInfo)
+				balanceTransferListGuard.Unlock()
+				deletedActorCount++
+			} else {
+				if err := actorsOut.SetActor(result.address, &result.actor); err != nil {
+					return err
+				}
+				resultCount++
 			}
-			resultCount++
 		}
-		log.Log(rt.INFO, "Result writer wrote %d results to state tree after %v", resultCount, time.Since(startTime))
+		log.Log(rt.INFO, "Result writer wrote %d results to state tree and deleted %d actors after %v", resultCount, deletedActorCount, time.Since(startTime))
 		return nil
 	})
 
 	if err := grp.Wait(); err != nil {
 		return cid.Undef, err
+	}
+
+	// doing balance increments for owners of the deleted miners with test state tree types
+	for e := balanceTransferList.Front(); e != nil; e = e.Next() {
+		bTransfer := balanceTransferInfo(e.Value.(balanceTransferInfo))
+		// check and make sure this is positive... just as a fun invariant, haha
+		if !bTransfer.value.GreaterThanEqual(big.Zero()) {
+			return cid.Undef, xerrors.Errorf("deleted test miner's balance was negative and we tried to send it to address %v", bTransfer.address)
+		}
+		incrementaddr := bTransfer.address
+		actor, found, err := actorsOut.GetActor(bTransfer.address)
+		if err != nil {
+			return cid.Undef, err
+		}
+		// if you don't find the owner of the deleted miner, swap to sending funds to f099
+		if !found {
+			f099addr, err := address.NewFromString("f099")
+			if err != nil {
+				return cid.Undef, err
+			}
+			actor, found, err = actorsOut.GetActor(f099addr)
+			incrementaddr = f099addr
+			if err != nil {
+				return cid.Undef, err
+			}
+			// if you don't find THAT one, you really messed up bad!
+			if !found {
+				return cid.Undef, xerrors.Errorf("could not find actor for the owner of the deleted miner, and then could not find f099 to send the funds to as a backup. something is very wrong here.")
+			}
+		}
+		actor.Balance = big.Add(actor.Balance, bTransfer.value)
+		err = actorsOut.SetActor(incrementaddr, actor)
+		if err != nil {
+			return cid.Undef, err
+		}
 	}
 
 	elapsed := time.Since(startTime)
@@ -234,9 +284,16 @@ type actorMigrationInput struct {
 	cache      MigrationCache  // cache of existing cid -> cid migrations for this actor
 }
 
+type balanceTransferInfo struct {
+	address address.Address
+	value   big.Int
+}
+
 type actorMigrationResult struct {
-	newCodeCID cid.Cid
-	newHead    cid.Cid
+	newCodeCID                            cid.Cid
+	newHead                               cid.Cid
+	minerTypeMigrationShouldDelete        bool
+	minerTypeMigrationBalanceTransferInfo balanceTransferInfo
 }
 
 type actorMigration interface {
@@ -254,8 +311,10 @@ type migrationJob struct {
 }
 
 type migrationJobResult struct {
-	address.Address
-	states6.Actor
+	address                               address.Address
+	actor                                 states6.Actor
+	minerTypeMigrationShouldDelete        bool
+	minerTypeMigrationBalanceTransferInfo balanceTransferInfo
 }
 
 func (job *migrationJob) run(ctx context.Context, store cbor.IpldStore, priorEpoch abi.ChainEpoch) (*migrationJobResult, error) {
@@ -272,13 +331,20 @@ func (job *migrationJob) run(ctx context.Context, store cbor.IpldStore, priorEpo
 	}
 
 	// Set up new actor record with the migrated state.
-	//XXX: now how do i transfer any funds from miner to owner?
+	// XXX: now how do i transfer any funds from miner to owner?
 	// XXX: maybe add a TransferFrom field to this type to pass around transfers btwn actors
 	// XXX: pair of transfer address and transfer amount
+	// XXX: also a boolean for whether this miner should be deleted from the state tree
+	// XXX: what is going on in power and market actors, also????
+	//
+	// XXX: to test: add one of each type of miner, maybe add some sectors, make a complex enough state and check some invariants???
+	// XXX: give some some fees, give some no fees, etc, etc, etc
 	// XXX: https://github.com/filecoin-project/specs-actors/blob/0fa32a654d910960306a0567d69f8d2ac1e66c67/actors/migration/nv4/top.go#L228
 	return &migrationJobResult{
-		job.Address, // Unchanged
-		states6.Actor{
+		minerTypeMigrationShouldDelete:        result.minerTypeMigrationShouldDelete,
+		minerTypeMigrationBalanceTransferInfo: result.minerTypeMigrationBalanceTransferInfo,
+		address:                               job.Address, // Unchanged
+		actor: states6.Actor{
 			Code:       result.newCodeCID,
 			Head:       result.newHead,
 			CallSeqNum: job.Actor.CallSeqNum, // Unchanged
